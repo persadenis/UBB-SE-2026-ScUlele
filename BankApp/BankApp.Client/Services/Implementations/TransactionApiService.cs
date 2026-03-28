@@ -10,46 +10,64 @@ namespace BankApp.Client.Services.Implementations
     public class TransactionApiService : ITransactionApiService
     {
         private readonly ApiService _apiService;
+
         public TransactionApiService(ApiService apiService)
         {
-            // TODO: implement transaction api service logic
-            ;
+            _apiService = apiService;
         }
 
         public Task<TransactionFilterMetadataResponse?> GetFilterMetadataAsync()
         {
-            // TODO: load filter metadata
-            return default !;
+            return _apiService.GetAsync<TransactionFilterMetadataResponse>("api/transactions/filters");
         }
 
         public Task<TransactionHistoryResponse?> GetHistoryAsync(TransactionHistoryRequest request)
         {
-            // TODO: load history
-            return default !;
+            return _apiService.PostAsync<TransactionHistoryRequest, TransactionHistoryResponse>("api/transactions/history", request);
         }
 
         public Task<TransactionDetailsResponse?> GetTransactionAsync(int transactionId)
         {
-            // TODO: load transaction
-            return default !;
+            return _apiService.GetAsync<TransactionDetailsResponse>($"api/transactions/{transactionId}");
         }
 
         public async Task<ExportedFileResult?> ExportTransactionsAsync(TransactionExportRequest request)
         {
-            // TODO: implement export logic
-            return default !;
+            DownloadResponse? response = await _apiService.PostDownloadAsync("api/transactions/export", request);
+            return response == null ? null : await SaveDownloadAsync(response);
         }
 
         public async Task<ExportedFileResult?> ExportReceiptAsync(int transactionId)
         {
-            // TODO: implement export logic
-            return default !;
+            DownloadResponse? response = await _apiService.GetDownloadAsync($"api/transactions/{transactionId}/receipt");
+            return response == null ? null : await SaveDownloadAsync(response);
         }
 
         private static async Task<ExportedFileResult> SaveDownloadAsync(DownloadResponse response)
         {
-            // TODO: implement save download logic
-            return default !;
+            string exportDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "BankAppExports");
+
+            Directory.CreateDirectory(exportDirectory);
+
+            string fileName = string.IsNullOrWhiteSpace(response.FileName) ? "download.bin" : response.FileName;
+            string filePath = Path.Combine(exportDirectory, fileName);
+
+            if (File.Exists(filePath))
+            {
+                string timestampedName = $"{Path.GetFileNameWithoutExtension(fileName)}-{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(fileName)}";
+                filePath = Path.Combine(exportDirectory, timestampedName);
+            }
+
+            await File.WriteAllBytesAsync(filePath, response.Content);
+
+            return new ExportedFileResult
+            {
+                FileName = Path.GetFileName(filePath),
+                FilePath = filePath,
+                ContentType = response.ContentType
+            };
         }
     }
 }
