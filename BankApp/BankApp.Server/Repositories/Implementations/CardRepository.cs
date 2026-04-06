@@ -9,52 +9,47 @@ namespace BankApp.Server.Repositories.Implementations
         private readonly ICardDAO _cardDao;
         private readonly IAccountDAO _accountDao;
         private readonly IUserCardPreferenceDAO _userCardPreferenceDao;
+
         public CardRepository(ICardDAO cardDao, IAccountDAO accountDao, IUserCardPreferenceDAO userCardPreferenceDao)
         {
-            // TODO: implement card repository logic
-            ;
+            _cardDao = cardDao;
+            _accountDao = accountDao;
+            _userCardPreferenceDao = userCardPreferenceDao;
         }
 
         public List<Card> GetCardsByUserId(int userId)
         {
-            // TODO: load cards by user id
-            return default !;
+            return _cardDao.FindByUserId(userId);
         }
 
         public Card? GetCardById(int cardId)
         {
-            // TODO: load card by id
-            return default !;
+            return _cardDao.FindById(cardId);
         }
 
         public Account? GetAccountById(int accountId)
         {
-            // TODO: load account by id
-            return default !;
+            return _accountDao.FindById(accountId);
         }
 
         public UserCardPreference? GetSortPreference(int userId)
         {
-            // TODO: load sort preference
-            return default !;
+            return _userCardPreferenceDao.FindByUserId(userId);
         }
 
         public bool SaveSortPreference(int userId, string sortOption)
         {
-            // TODO: implement save sort preference logic
-            return default !;
+            return _userCardPreferenceDao.Upsert(userId, sortOption);
         }
 
         public bool UpdateStatus(int cardId, string status)
         {
-            // TODO: implement update status logic
-            return default !;
+            return _cardDao.UpdateStatus(cardId, status);
         }
 
         public bool UpdateSettings(int cardId, decimal? spendingLimit, bool isOnlinePaymentsEnabled, bool isContactlessPaymentsEnabled)
         {
-            // TODO: implement update settings logic
-            return default !;
+            return _cardDao.UpdateSettings(cardId, spendingLimit, isOnlinePaymentsEnabled, isContactlessPaymentsEnabled);
         }
     }
 }
