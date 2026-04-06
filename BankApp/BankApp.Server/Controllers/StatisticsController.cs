@@ -8,44 +8,36 @@ namespace BankApp.Server.Controllers
     public class StatisticsController : ControllerBase
     {
         private readonly IStatisticsService _statisticsService;
+
         public StatisticsController(IStatisticsService statisticsService)
         {
-            // TODO: implement statistics controller logic
-            ;
+            _statisticsService = statisticsService;
         }
 
-        private int GetAuthenticatedUserId()
-        {
-            // TODO: load authenticated user id
-            return default !;
-        }
+        private int GetAuthenticatedUserId() => (int)HttpContext.Items["UserId"]!;
 
         [HttpGet("spending-by-category")]
         public IActionResult GetSpendingByCategory()
         {
-            // TODO: load spending by category
-            return default !;
+            return Ok(_statisticsService.GetSpendingByCategory(GetAuthenticatedUserId()));
         }
 
         [HttpGet("income-vs-expenses")]
         public IActionResult GetIncomeVsExpenses()
         {
-            // TODO: load income vs expenses
-            return default !;
+            return Ok(_statisticsService.GetIncomeVsExpenses(GetAuthenticatedUserId()));
         }
 
         [HttpGet("balance-trends")]
         public IActionResult GetBalanceTrends()
         {
-            // TODO: load balance trends
-            return default !;
+            return Ok(_statisticsService.GetBalanceTrends(GetAuthenticatedUserId()));
         }
 
         [HttpGet("top-recipients")]
         public IActionResult GetTopRecipients()
         {
-            // TODO: load top recipients
-            return default !;
+            return Ok(_statisticsService.GetTopRecipients(GetAuthenticatedUserId()));
         }
     }
 }
