@@ -1,109 +1,188 @@
-# BankApp
+# Team C Setup Guide
 
-Banking app. ASP.NET Core server + WinUI 3 client.
-Our team: authentication, dashboard, profile.
-Other teams add their features to the same server.
+This file explains what teammates need to install, configure, and run after cloning the repository.
 
-## Prerequisites
+## 1. Required Tools
 
-- Visual Studio 2022, workloads: ASP.NET and web development, .NET desktop development, Windows application development
-- SQL Server 2022 Developer (free): https://www.microsoft.com/en-us/sql-server/sql-server-downloads - pick Developer, Basic install
-- SSMS: https://learn.microsoft.com/en-us/ssms/download-sql-server-management-studio-ssms
-- Git: https://git-scm.com/download/win
+Install these before running the app:
 
-## Architecture
+- Visual Studio 2022 with `.NET desktop development` and Windows app/WinUI support
+- .NET 8 SDK
+- SQL Server or SQL Server Express
+- SQL Server Management Studio, or `sqlcmd`
+- Git
 
-Two programs running at the same time:
+The local database used by the app is named `BankAppDb`.
 
-- **Server** (BankApp.Server) - ASP.NET Core Web API, runs in console, has all logic, only thing that talks to DB
-- **Client** (BankApp.Client) - WinUI 3 desktop app, the UI, sends HTTP requests to server
-- **BankApp.Models** - shared library, entities + enums + DTOs, referenced by both
+## 2. Database Setup
 
-User clicks Login -> client sends `POST /api/auth/login` with JSON -> server processes -> returns JSON -> client updates UI.
+Create the database first:
 
-## Setup
-
-### 1. Clone
-
-```
-git clone <repo-url>
+```sql
+CREATE DATABASE BankAppDb;
 ```
 
-### 2. Database
+Then run the SQL scripts in this order:
 
-- Open SSMS
-- Server Name: `localhost` (or `.\SQLEXPRESS` for SQL Express)
-- Windows Authentication -> Connect
-- New Query -> paste contents of `Database/CreateDatabase.sql` -> Execute
-- Refresh Databases in left panel -> BankAppDb should appear with 11 tables
-
-### 3. Connection string
-
-Open `BankApp.Server/appsettings.json`, check the server name matches yours:
-- Normal install: `Server=localhost`
-- SQL Express: `Server=.\SQLEXPRESS`
-- LocalDB: `Server=(localdb)\MSSQLLocalDB`
-
-Don't commit this change. Add appsettings.json to .gitignore
-
-### 4. API Secret / ClientID / SMTP code generations
-
-For the SMTP Connection:
-- Create/Open a Google Account
-- Make sure 2FA is enabled for the google acc
-- Create a new app password ex: "My-App-Pass"
-- Open `BankApp.Server/appsettings.json`
-- Modify the code from "SmtpPass": "My-App-Pass"
-
-For external auth with Google:
-- Open Google Cloud Platform
-- Go to APIs and Services -> Credentials
-- Create a new OAuthClient ID
-- Open `OAuthSecrets.template.cs`
-- Replace the strings with the generated codes.
-
-### 5. Startup projects
-
-Right-click Solution -> Properties -> Multiple startup projects -> set both Server and Client to "Start"
-
-### 6. Build + run
-
-- Ctrl+Shift+B -> should be 0 errors
-- F5 -> server console opens, then client window
-- Swagger at `http://localhost:5000/swagger` for testing endpoints
-
-## Working on features
-
-```
-git checkout -b feature/your-name/what-you-do
-# write code
-git add .
-git commit -m "what you did"
-git push origin feature/your-name/what-you-do
-# open Pull Request on GitHub
+```text
+DatabaseSchema\BankAppDatabaseSchema.sql
+DatabaseSchema\BankAppTeamC.sql
 ```
 
-## API endpoints
+Optional demo data scripts:
 
-### Auth
-| Method | Path | Body | Returns |
-|--------|------|------|---------|
-| POST | /api/auth/login | LoginRequest | LoginResponse |
-| POST | /api/auth/register | RegisterRequest | RegisterResponse |
-| POST | /api/auth/verify-otp | VerifyOTPRequest | LoginResponse |
-| POST | /api/auth/forgot-password | ForgotPasswordRequest | 200 OK |
-| POST | /api/auth/reset-password | ResetPasswordRequest | 200 or 400 |
+```text
+DatabaseSchema\BankAppDemoSeed.sql
+DatabaseSchema\BankAppExtraDemoCards.sql
+DatabaseSchema\BankAppExtraCardTransactions.sql
+```
 
-### Dashboard
-| Method | Path | Body | Returns |
-|--------|------|------|---------|
-| GET | /api/dashboard/{userId} | — | DashboardResponse |
+Recommended order for demo data:
 
-### Profile
-| Method | Path | Body | Returns |
-|--------|------|------|---------|
-| GET | /api/profile/{userId} | — | User |
-| PUT | /api/profile/{userId} | UpdateProfileRequest | 200 or 400 |
-| PUT | /api/profile/{userId}/password | ChangePasswordRequest | 200 or 400 |
-| GET | /api/profile/{userId}/notifications/preferences | — | List\<NotificationPreference\> |
-| PUT | /api/profile/{userId}/notifications/preferences | List\<NotificationPreference\> | 200 or 400 |
+```text
+1. Run BankAppDatabaseSchema.sql
+2. Run BankAppTeamC.sql
+3. Start the app and register/login at least one test user
+4. Run BankAppDemoSeed.sql
+5. If you use test1@example.com, run BankAppExtraDemoCards.sql
+6. Run BankAppExtraCardTransactions.sql if the demo user/account/card IDs match the seed data
+```
+
+`BankAppExtraDemoCards.sql` expects a user with email `test1@example.com`.
+If it fails, create/register that user first or update the email inside the script.
+
+## 3. Connection String
+
+The server reads the database connection string from:
+
+```text
+BankApp\BankApp.Server\appsettings.json
+```
+
+Current example:
+
+```json
+"DefaultConnection": "Server=.\\SQLEXPRESS;Database=BankAppDb;Trusted_Connection=True;TrustServerCertificate=True;"
+```
+
+If your SQL Server instance is different, change only the `Server=` part.
+Common examples:
+
+```json
+"Server=.\\SQLEXPRESS;Database=BankAppDb;Trusted_Connection=True;TrustServerCertificate=True;"
+"Server=(localdb)\\MSSQLLocalDB;Database=BankAppDb;Trusted_Connection=True;TrustServerCertificate=True;"
+"Server=localhost;Database=BankAppDb;Trusted_Connection=True;TrustServerCertificate=True;"
+```
+
+Do not commit personal passwords or secrets.
+
+## 4. Email / 2FA Note
+
+Card reveal can use password and OTP/2FA depending on the user settings.
+SMTP settings are also in:
+
+```text
+BankApp\BankApp.Server\appsettings.json
+```
+
+`SmtpPass` is a placeholder by default:
+
+```json
+"SmtpPass": "INSERT-SMTPPASS-HERE"
+```
+
+Email OTP will not work unless a real SMTP app password is configured locally.
+For normal testing, use a user without 2FA enabled or configure SMTP locally without committing secrets.
+
+## 5. Run The Server
+
+From the repository root:
+
+```powershell
+cd C:\path\to\UBB-SE-2026-ScUlele
+dotnet run --project .\BankApp\BankApp.Server\BankApp.Server.csproj
+```
+
+Expected server URL:
+
+```text
+http://localhost:5024
+```
+
+Swagger should be available at:
+
+```text
+http://localhost:5024/swagger
+```
+
+Leave the server terminal running while using the client.
+
+## 6. Build And Run The Client
+
+From the repository root:
+
+```powershell
+dotnet build .\BankApp\BankApp.Client\BankApp.Client.csproj -p:Platform=x64 -p:WindowsPackageType=None -p:AppxPackage=false -p:GenerateAppInstallerFile=false
+```
+
+Then run:
+
+```text
+BankApp\BankApp.Client\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\BankApp.Client.exe
+```
+
+If the executable is missing, rebuild the client first.
+
+## 7. Features To Check
+
+Team C implemented:
+
+- Cards page: list cards, select cards, freeze/unfreeze, save settings, reveal sensitive details after password/2FA
+- Transfer History page: transaction list, filters, details panel, receipt export
+- Statistics page: income/expenses/net, spending by category, top recipients/merchants, balance trends
+- Export: CSV, PDF, and XLSX transaction exports
+
+Exported files are saved locally under:
+
+```text
+Documents\BankAppExports
+```
+
+## 8. Common Problems
+
+If registration/login fails:
+
+- Check that `BankAppDb` exists
+- Check that both schema scripts were run
+- Check `appsettings.json` connection string
+- Restart the server after changing `appsettings.json`
+
+If pages are empty:
+
+- Make sure you are logged in as a user that has seeded account/card/transaction data
+- Run the demo seed scripts after the user exists
+
+If the client opens but cannot load data:
+
+- Make sure the server is still running at `http://localhost:5024`
+- Restart the client after restarting the server
+
+If card reveal OTP fails:
+
+- Configure SMTP locally, or test with a user that does not have 2FA enabled
+
+## 9. Fresh Clone Verification
+
+Before presenting or merging final work, test from a clean clone:
+
+```text
+1. Clone the repository into a new folder
+2. Restore/build the solution
+3. Create BankAppDb
+4. Run the database schema scripts
+5. Register a user
+6. Run optional seed scripts
+7. Start server
+8. Start client
+9. Test Cards, Transfer History, Statistics, and Export
+```
